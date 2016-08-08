@@ -4,6 +4,7 @@ Synopsis: A PDS reachability query library.
 Authors: JHU PL Lab <pl.cs@jhu.edu>
 License: Apache
 
+Maintainers: JHU PL Lab <pl.cs@jhu.edu>
 Description: This library performs efficient reachability queries on abstractly specified push-down systems.
 Homepage: https://github.com/JHU-PL-Lab/pds-reachability
 
@@ -18,6 +19,12 @@ BuildDepends: threads
 # (e.g. reposition the _build directory via a symlink) on build.
 PreBuildCommand: ./.execute_if_exists ./.local_prebuild
 PreCleanCommand: ./.execute_if_exists ./.local_preclean
+
+SourceRepository head
+  Type: git
+  Location: https://github.com/JHU-PL-Lab/pds-reachability.git
+  Browser: https://github.com/JHU-PL-Lab/pds-reachability
+  Branch: master
 
 Library "pds-reachability"
   Path: src/pds-reachability
