@@ -1,6 +1,6 @@
 opam-version: "1.2"
 name: "pds-reachability"
-version: "0.2"
+version: "0.2+dev"
 maintainer: "JHU PL Lab <pl.cs@jhu.edu>"
 authors: [ "JHU PL Lab <pl.cs@jhu.edu>" ]
 license: "Apache"

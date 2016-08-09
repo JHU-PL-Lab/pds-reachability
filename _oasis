@@ -1,5 +1,5 @@
 Name: pds-reachability
-Version: 0.2
+Version: 0.2+dev
 Synopsis: A PDS reachability query library.
 Authors: JHU PL Lab <pl.cs@jhu.edu>
 License: Apache
