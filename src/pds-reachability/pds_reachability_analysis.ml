@@ -446,8 +446,8 @@ struct
             (* We're adding to the analysis a node that it does not contain. *)
             match node with
             | State_node(state) ->
-              (* We just need to introduce this node to all of the edge functions
-                 that we have accumulated so far. *)
+              (* We just need to introduce this node to all of the edge
+                 functions that we have accumulated so far. *)
               let edge_work =
                 analysis.edge_functions
                 |> List.enum
@@ -460,7 +460,8 @@ struct
                         actions
                         (State_node to_state)
                     in
-                    (* We know that the from_node has already been introduced. *)
+                    (* We know that the from_node has already been
+                       introduced. *)
                     Work.Introduce_edge edge
                   )
               in
@@ -492,8 +493,8 @@ struct
                   ; target=Intermediate_node(target, actions')
                   ; edge_action=action}
               in
-              (* We now have some work based upon the node to introduce.  We must
-                 also mark the node as present. *)
+              (* We now have some work based upon the node to introduce.  We
+                 must also mark the node as present. *)
               { (analysis
                  |> add_work (Work.Introduce_edge edge)
                  |> add_work (Work.Expand_node edge.target)
@@ -509,17 +510,18 @@ struct
               } = edge
           in
           let analysis' =
-            (* When an edge is introduced, all of the edges connecting to it should
-               be closed with it.  These new edges are introduced to the work queue
-               and drive the gradual expansion of closure.  It may also be necessary
-               to expand some nodes which have not yet been expanded. *)
+            (* When an edge is introduced, all of the edges connecting to it
+               should be closed with it.  These new edges are introduced to the
+               work queue and drive the gradual expansion of closure.  It may
+               also be necessary to expand some nodes which have not yet been
+               expanded. *)
             let edge_work, nodes_to_expand =
               match action with
               | Nop ->
                 (* The primary closure for nop edges is to find all pushes that
-                   lead into them and route them through the nop.  As this creates
-                   new push edges, the target should be expanded when at least one
-                   edge is created. *)
+                   lead into them and route them through the nop.  As this
+                   creates new push edges, the target should be expanded when at
+                   least one edge is created. *)
                 let push_closure_work, push_closure_nodes =
                   let work =
                     analysis.reachability
@@ -540,11 +542,12 @@ struct
                 (* A further closure for nop edges occurs when two nop edges are
                    adjacent *AND* the source of the first edge is a start node.
                    In that case, we perform nop closure.  Since the new edge is
-                   effectively "live" -- there are no pops between its target and
-                   a start node -- we should treat the targets of these new edges
-                   as expansion candidates as well.  As with other closure
+                   effectively "live" -- there are no pops between its target
+                   and a start node -- we should treat the targets of these new
+                   edges as expansion candidates as well.  As with other closure
                    processes, this is done in two steps: from the perspective of
-                   the left edge (where a right edge is added) and vice versa. *)
+                   the left edge (where a right edge is added) and vice
+                   versa. *)
                 let left_nop_work, left_nop_nodes =
                   let work =
                     analysis.reachability
@@ -596,8 +599,8 @@ struct
                   |> expand_add to_node
                 )
               | Push k ->
-                (* Any nop, pop, or popdyn edges at the target of this push can be
-                   closed.  Any new targets are candidates for expansion. *)
+                (* Any nop, pop, or popdyn edges at the target of this push can
+                   be closed.  Any new targets are candidates for expansion. *)
                 let nop_work_list, nop_expand_set =
                   analysis.reachability
                   |> Structure.find_nop_edges_by_source to_node
@@ -657,7 +660,7 @@ struct
                     (fun (work_list, expand_set) action ->
                        Dph.perform_untargeted_dynamic_pop k action
                        |> Enum.fold
-                         (fun (work_list, expand_set) (stack_actions, to_state) ->
+                         (fun (work_list,expand_set) (stack_actions,to_state) ->
                             let to_node' = State_node to_state in
                             let edge =
                               next_edge_in_sequence
@@ -681,8 +684,9 @@ struct
                   |> expand_add to_node
                 )
               | Pop k ->
-                (* Pop edges can only close with the push edges that precede them.
-                   The target of these new edges is a candidate for expansion. *)
+                (* Pop edges can only close with the push edges that precede
+                   them.  The target of these new edges is a candidate for
+                   expansion. *)
                 let work =
                   analysis.reachability
                   |> Structure.find_push_edges_by_target from_node
@@ -744,7 +748,7 @@ struct
                 (fun (work_list, expand_set) (from_node', element) ->
                    Dph.perform_untargeted_dynamic_pop element action
                    |> Enum.fold
-                     (fun (work_list, expand_set) (stack_action_list, to_state) ->
+                     (fun (work_list,expand_set) (stack_action_list,to_state) ->
                         let to_node = State_node(to_state) in
                         let edge =
                           next_edge_in_sequence
@@ -789,7 +793,8 @@ struct
   let get_reachable_states state stack_actions analysis =
     lazy_logger `debug (fun () ->
         let (nodes,edges) = get_size analysis in
-        Printf.sprintf "get_reachable_states: analysis has %d nodes and %d edges"
+        Printf.sprintf
+          "get_reachable_states: analysis has %d nodes and %d edges"
           nodes edges
       );
     let node = Intermediate_node(State_node(state), stack_actions) in
@@ -868,7 +873,9 @@ struct
              then None
              else Some
                  ( "node_awareness_map"
-                 , Yojson_utils.map_to_yojson Node.to_yojson node_awareness_to_yojson
+                 , Yojson_utils.map_to_yojson
+                     Node.to_yojson
+                     node_awareness_to_yojson
                      enum_new_mappings a2
                  )
            end
