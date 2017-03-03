@@ -1,4 +1,4 @@
-(**
+(*
    This module defines a module type signature used as the basis for the PDS
    reachability functor.
 *)

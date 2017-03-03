@@ -47,6 +47,7 @@ struct
     | Consume_identical_2_of_2 of Stack_element.t
     | Chain_two_push_1_of_2 of Stack_element.t * Stack_element.t
     | Chain_two_push_2_of_2 of Stack_element.t
+    | Pop_anything
     [@@deriving eq, ord, show, to_yojson]
   ;;
   module Targeted_dynamic_pop_action =
@@ -95,6 +96,8 @@ struct
       Enum.singleton
         [ Push(k)
         ; Push(element) ]
+    | Pop_anything ->
+      Enum.singleton []
   ;;
   let perform_untargeted_dynamic_pop element action =
     match action with
@@ -390,6 +393,58 @@ let lazy_edge_function_test =
     assert_bool "too many edges" (edges < 100)
 ;;
 
+let prime_factor_count_test =
+  "prime_factor_count_test" >:: fun _ ->
+    let is_prime n =
+      let rec div k =
+        ( if k <= 1 then true else
+          match n mod k with
+         | 0 -> false
+         | _ -> div (k-1)) in
+      (match n with
+       | 1 -> false
+       | _ -> div (n-1)
+      ) in
+    let is_factor n k =
+      (if n mod k == 0 then true else false) in
+    let start = 12 in
+    let analysis =
+      Test_reachability.empty ()
+      |> Test_reachability.add_edge_function
+        (fun state ->
+          if (state > 0) then
+            let less_than_state = List.of_enum (1--state) in
+            let primes_less_than_state = List.filter is_prime less_than_state in
+            let prime_factors = List.filter (is_factor state) primes_less_than_state in
+            let transition_list = List.map (fun n -> ([Push 'a'], state/n)) prime_factors in
+            List.enum transition_list
+          else
+            Enum.empty ()
+        )
+      |> Test_reachability.add_edge 1 [] 0
+      |> Test_reachability.add_edge_function
+        (fun state ->
+           if (state <= 0) then
+             Enum.singleton ([Pop 'a'], state-1)
+           else
+             Enum.empty ()
+        )
+      |> Test_reachability.add_edge_function
+        (fun state ->
+           if state < 0 then
+             Enum.singleton ([Pop 'b'], state)
+           else
+             Enum.empty ())
+      |> Test_reachability.add_start_state start [Push 'b']
+      |> Test_reachability.fully_close
+    in
+    lazy_logger `trace
+      (fun () -> "analysis:\n" ^
+                 String_utils.indent 2 (Test_reachability.show_analysis analysis));
+    let states = Test_reachability.get_reachable_states start [Push 'b'] analysis in
+    assert_equal ~printer:(Pp_utils.pp_to_string @@ Pp_utils.pp_list Format.pp_print_int) [-3] (List.sort compare @@ List.of_enum states)
+;;
+
 let tests = "Test_reachability" >:::
             [ immediate_reachability_test
             ; immediate_non_reachable_test
@@ -402,5 +457,6 @@ let tests = "Test_reachability" >:::
             ; untargeted_dynamic_pop_reachability_test
             ; untargeted_dynamic_pop_function_reachability_test
             ; lazy_edge_function_test
+            ; prime_factor_count_test
             ]
 ;;

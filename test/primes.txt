@@ -1,0 +1,26 @@
+module%reachability PrimesReachabilityQuestion =
+struct
+    type%state state =
+        | Number of int
+        | Count of int
+    ;;
+
+    type%stack_element stack_element =
+        | Bottom
+        | Prime
+    ;;
+
+    let%transition_function transition state =
+        match state with
+        | Number n ->
+            let dividing_primes = foo n in
+            let%pick p = dividing_primes in
+            [%result Number(n/p), [Prime]]
+        | Count n ->
+            begin
+                match [%pop] with
+                | Bottom -> [%result Count(n), []]
+                | Prime -> [%result Count(n+1), []]
+            end
+    ;;
+end;;
