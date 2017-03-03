@@ -37,8 +37,7 @@ sig
     | Intermediate_node of node * stack_action list
 
   (** The decorated type of node used for reachability. *)
-  module Node : Decorated_type
-    with type t = node
+  module Node : Decorated_type with type t = node
 
   type edge =
     { source : Node.t
@@ -47,8 +46,7 @@ sig
     };;
 
   (** The decorated type of edge used in reachability. *)
-  module Edge : Decorated_type
-    with type t = edge
+  module Edge : Decorated_type with type t = edge
 end;;
 
 module Make
@@ -78,13 +76,13 @@ struct
     ( Stack_element.t
     , Targeted_dynamic_pop_action.t
     ) pds_stack_action
-    [@@deriving ord, show, to_yojson]
+  [@@deriving ord, show, to_yojson]
   ;;
 
   type node =
     | State_node of State.t
     | Intermediate_node of node * stack_action list
-    [@@deriving eq, ord, show, to_yojson]
+  [@@deriving eq, ord, show, to_yojson]
   ;;
 
   module Node =
@@ -102,7 +100,7 @@ struct
     ; target : node
     ; edge_action : stack_action
     }
-    [@@deriving eq, ord, show, to_yojson]
+  [@@deriving eq, ord, show, to_yojson]
   ;;
 
   module Edge =
