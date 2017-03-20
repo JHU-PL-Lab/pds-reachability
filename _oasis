@@ -43,7 +43,7 @@ Library "pds-reachability"
     batteries,
     jhupllib,
     ppx_deriving.std (>= 3.2),
-    ppx_deriving_yojson,
+    ppx_deriving_yojson (>= 2.1),
     yojson
 
 Executable "test"
