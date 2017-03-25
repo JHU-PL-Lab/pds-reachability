@@ -16,7 +16,7 @@ sig
   include Pds_reachability_types.Types;;
 
   (** The type of edge-generating functions used in this analysis. *)
-  type edge_function = State.t -> (stack_action list * State.t) Enum.t
+  type edge_function = State.t -> (Stack_action.t list * State.t) Enum.t
 
   (** The type of functions to generate untargeted dynamic pop actions in this
       analysis. *)
@@ -38,7 +38,7 @@ sig
 
   (** Adds a single edge to a reachability analysis. *)
   val add_edge
-    : State.t -> stack_action list -> State.t -> analysis -> analysis
+    : State.t -> Stack_action.t list -> State.t -> analysis -> analysis
 
   (** Adds a function to generate edges for a reachability analysis.  Given a
       source node, the function generates edges from that source node.  The
@@ -66,7 +66,7 @@ sig
       state to be used as the source state of a call to [get_reachable_states].
   *)
   val add_start_state
-    : State.t -> stack_action list -> analysis -> analysis
+    : State.t -> Stack_action.t list -> analysis -> analysis
 
   (** Determines whether the reachability analysis is closed. *)
   val is_closed : analysis -> bool
@@ -83,7 +83,7 @@ sig
       previously.  If the analysis is not fully closed, then the enumeration of
       reachable states may be incomplete.  *)
   val get_reachable_states
-    : State.t -> stack_action list -> analysis -> State.t Enum.t
+    : State.t -> Stack_action.t list -> analysis -> State.t Enum.t
 
   (** Pretty-printing function for the analysis. *)
   val pp_analysis : analysis pretty_printer
@@ -126,6 +126,7 @@ module Make
      and module Stack_element = Basis.Stack_element
      and module Targeted_dynamic_pop_action = Dph.Targeted_dynamic_pop_action
      and module Untargeted_dynamic_pop_action = Dph.Untargeted_dynamic_pop_action
+     and module Stack_action = Dph.Stack_action
 =
 struct
   (********** Create and wire in appropriate components. **********)
@@ -136,8 +137,9 @@ struct
   module Structure = Pds_reachability_structure.Make(Basis)(Dph)(Types);;
 
   include Types;;
+  open Types.Stack_action.T;;
 
-  type edge_function = State.t -> (stack_action list * State.t) Enum.t;;
+  type edge_function = State.t -> (Stack_action.t list * State.t) Enum.t;;
   type untargeted_dynamic_pop_action_function =
     State.t -> Untargeted_dynamic_pop_action.t Enum.t;;
 

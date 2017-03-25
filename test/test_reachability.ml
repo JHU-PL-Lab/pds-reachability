@@ -48,7 +48,7 @@ struct
     | Chain_two_push_1_of_2 of Stack_element.t * Stack_element.t
     | Chain_two_push_2_of_2 of Stack_element.t
     | Pop_anything
-    [@@deriving eq, ord, show, to_yojson]
+  [@@deriving eq, ord, show, to_yojson]
   ;;
   module Targeted_dynamic_pop_action =
   struct
@@ -61,7 +61,7 @@ struct
   end;;
   type untargeted_dynamic_pop_action =
     | Target_condition_on_element_is_A of State.t * State.t
-    [@@deriving eq, ord, show, to_yojson]
+  [@@deriving eq, ord, show, to_yojson]
   ;;
   module Untargeted_dynamic_pop_action =
   struct
@@ -72,11 +72,11 @@ struct
     let show = show_untargeted_dynamic_pop_action;;
     let to_yojson = untargeted_dynamic_pop_action_to_yojson;;
   end;;
-  type stack_action =
-    ( Stack_element.t
-    , Targeted_dynamic_pop_action.t
-    ) pds_stack_action
+  module Stack_action =
+    Stack_action_constructor(Stack_element)(Targeted_dynamic_pop_action)
   ;;
+
+  open Stack_action.T;;
 
   let perform_targeted_dynamic_pop element action =
     match action with
@@ -114,6 +114,8 @@ module Test_reachability =
     (Test_dph)
     (Pds_reachability_work_collection_templates.Work_stack)
 ;;
+
+open Test_reachability.Stack_action.T;;
 
 let immediate_reachability_test =
   "immediate_reachability_test" >:: fun _ ->
@@ -207,7 +209,9 @@ let nondeterminism_reachability_test =
       (fun () -> "analysis:\n" ^
                  String_utils.indent 2 (Test_reachability.show_analysis analysis));
     let states = Test_reachability.get_reachable_states 0 [Push 'a'] analysis in
-    assert_equal (List.sort compare @@ List.of_enum states) [1;2]
+    let expected_states = [1;2] in
+    let actual_states = (List.sort compare @@ List.of_enum states) in
+    assert_equal expected_states actual_states
 ;;
 
 let targeted_dynamic_pop_reachability_test =
@@ -398,9 +402,9 @@ let prime_factor_count_test =
     let is_prime n =
       let rec div k =
         ( if k <= 1 then true else
-          match n mod k with
-         | 0 -> false
-         | _ -> div (k-1)) in
+            match n mod k with
+            | 0 -> false
+            | _ -> div (k-1)) in
       (match n with
        | 1 -> false
        | _ -> div (n-1)
@@ -412,14 +416,14 @@ let prime_factor_count_test =
       Test_reachability.empty ()
       |> Test_reachability.add_edge_function
         (fun state ->
-          if (state > 0) then
-            let less_than_state = List.of_enum (1--state) in
-            let primes_less_than_state = List.filter is_prime less_than_state in
-            let prime_factors = List.filter (is_factor state) primes_less_than_state in
-            let transition_list = List.map (fun n -> ([Push 'a'], state/n)) prime_factors in
-            List.enum transition_list
-          else
-            Enum.empty ()
+           if (state > 0) then
+             let less_than_state = List.of_enum (1--state) in
+             let primes_less_than_state = List.filter is_prime less_than_state in
+             let prime_factors = List.filter (is_factor state) primes_less_than_state in
+             let transition_list = List.map (fun n -> ([Push 'a'], state/n)) prime_factors in
+             List.enum transition_list
+           else
+             Enum.empty ()
         )
       |> Test_reachability.add_edge 1 [] 0
       |> Test_reachability.add_edge_function
