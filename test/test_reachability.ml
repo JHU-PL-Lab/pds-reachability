@@ -75,8 +75,12 @@ struct
   module Stack_action =
     Stack_action_constructor(Stack_element)(Targeted_dynamic_pop_action)
   ;;
+  module Terminus =
+    Terminus_constructor(State)(Untargeted_dynamic_pop_action)
+  ;;
 
   open Stack_action.T;;
+  open Terminus.T;;
 
   let perform_targeted_dynamic_pop element action =
     match action with
@@ -103,8 +107,8 @@ struct
     match action with
     | Target_condition_on_element_is_A(s1,s2) ->
       if element == 'a'
-      then Enum.singleton ([],s1)
-      else Enum.singleton ([],s2)
+      then Enum.singleton ([],Static_terminus s1)
+      else Enum.singleton ([],Static_terminus s2)
   ;;
 end;;
 
@@ -116,6 +120,7 @@ module Test_reachability =
 ;;
 
 open Test_reachability.Stack_action.T;;
+open Test_reachability.Terminus.T;;
 
 let immediate_reachability_test =
   "immediate_reachability_test" >:: fun _ ->
@@ -183,7 +188,7 @@ let edge_function_reachability_test =
       |> Test_reachability.add_edge_function
         (fun state ->
            if state >= 50 then Enum.empty () else
-             Enum.singleton @@ ([Push 'b'], state + 1))
+             Enum.singleton @@ ([Push 'b'], Static_terminus(state + 1)))
       |> Test_reachability.add_edge 50 [Pop 'b'] 50
       |> Test_reachability.add_edge 50 [Pop 'a'] 51
       |> Test_reachability.add_start_state 0 [Push 'a']
@@ -316,7 +321,7 @@ let untargeted_dynamic_pop_function_reachability_test =
     *)
     let edge_function state =
       if state >= 1 && state < 8
-      then Enum.singleton ([Pop 'q'], state + 20)
+      then Enum.singleton ([Pop 'q'], Static_terminus(state + 20))
       else Enum.empty ()
     in
     let untargeted_dynamic_pop_action_fn state =
@@ -375,10 +380,10 @@ let lazy_edge_function_test =
         (fun state ->
            if state < 10 || state > 99999998 then Enum.empty () else
              List.enum [ ( [ Pop 'a' ]
-                         , state + 1
+                         , Static_terminus(state + 1)
                          )
                        ; ( [ Pop 'b' ]
-                         , state + 2
+                         , Static_terminus(state + 2)
                          )
                        ]
         )
@@ -419,8 +424,13 @@ let prime_factor_count_test =
            if (state > 0) then
              let less_than_state = List.of_enum (1--state) in
              let primes_less_than_state = List.filter is_prime less_than_state in
-             let prime_factors = List.filter (is_factor state) primes_less_than_state in
-             let transition_list = List.map (fun n -> ([Push 'a'], state/n)) prime_factors in
+             let prime_factors =
+               List.filter (is_factor state) primes_less_than_state
+             in
+             let transition_list =
+               List.map
+                 (fun n -> ([Push 'a'], Static_terminus(state/n))) prime_factors
+             in
              List.enum transition_list
            else
              Enum.empty ()
@@ -429,14 +439,14 @@ let prime_factor_count_test =
       |> Test_reachability.add_edge_function
         (fun state ->
            if (state <= 0) then
-             Enum.singleton ([Pop 'a'], state-1)
+             Enum.singleton ([Pop 'a'], Static_terminus(state-1))
            else
              Enum.empty ()
         )
       |> Test_reachability.add_edge_function
         (fun state ->
            if state < 0 then
-             Enum.singleton ([Pop 'b'], state)
+             Enum.singleton ([Pop 'b'], Static_terminus state)
            else
              Enum.empty ())
       |> Test_reachability.add_start_state start [Push 'b']

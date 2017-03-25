@@ -53,6 +53,44 @@ struct
   include T;;
 end;;
 
+(** The type of a module containing a decorated type for describing the end of
+    a path in a PDS. *)
+module type Decorated_terminus_type =
+sig
+  type state
+  type untargeted_dynamic_pop_action
+  module T :
+  sig
+    type t =
+      | Static_terminus of state
+      | Dynamic_terminus of untargeted_dynamic_pop_action
+    ;;
+  end;;
+  type t = T.t;;
+  include Decorated_type with type t := t;;
+end;;
+
+(** A functor to create a decorated stack action type. *)
+module Terminus_constructor
+    (State : Decorated_type)
+    (Untargeted_dynamic_pop_action : Decorated_type)
+  : Decorated_terminus_type with type state = State.t
+                             and type untargeted_dynamic_pop_action =
+                                   Untargeted_dynamic_pop_action.t
+=
+struct
+  type state = State.t
+  type untargeted_dynamic_pop_action = Untargeted_dynamic_pop_action.t
+  module T =
+  struct
+    type t =
+      | Static_terminus of State.t
+      | Dynamic_terminus of Untargeted_dynamic_pop_action.t
+    [@@deriving eq, ord, show, to_yojson]
+  end;;
+  include T;;
+end;;
+
 (** The type of a module which resolves dynamic pops. *)
 module type Dynamic_pop_handler =
 sig
@@ -73,6 +111,11 @@ sig
     with type stack_element = Stack_element.t
      and type targeted_dynamic_pop_action = Targeted_dynamic_pop_action.t
 
+  (** The decorated type of termini in the PDS. *)
+  module Terminus : Decorated_terminus_type
+    with type state = State.t
+     and type untargeted_dynamic_pop_action = Untargeted_dynamic_pop_action.t
+
   (** The resolution function for targeted dynamic pops.  This function takes a
       stack element which was pushed and the associated dynamic pop action.  The
       result is an enumeration of stack action sequences.  Each sequence is
@@ -88,7 +131,7 @@ sig
       their eventual target. *)
   val perform_untargeted_dynamic_pop :
     Stack_element.t -> Untargeted_dynamic_pop_action.t ->
-    (Stack_action.t list * State.t) Enum.t
+    (Stack_action.t list * Terminus.t) Enum.t
 end;;
 
 (** A module which serves as a dummy dynamic pop handler.  This handler should
@@ -111,6 +154,9 @@ struct
   end;;
   module Stack_action =
     Stack_action_constructor(Stack_element)(Targeted_dynamic_pop_action)
+  ;;
+  module Terminus =
+    Terminus_constructor(State)(Untargeted_dynamic_pop_action)
   ;;
   let perform_targeted_dynamic_pop _ Targeted_dynamic_pop_action.Null =
     Enum.empty ()
