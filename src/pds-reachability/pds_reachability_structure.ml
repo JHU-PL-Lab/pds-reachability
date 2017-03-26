@@ -108,19 +108,21 @@ struct
   module Targeted_dynamic_pop_action = Types.Targeted_dynamic_pop_action
   module Untargeted_dynamic_pop_action =
     Types.Untargeted_dynamic_pop_action
+  ;;
 
   open Types;;
+  open Types.Stack_action.T;;
 
   (********** Simple internal data structures. **********)
 
   type node_and_stack_element =
     Node.t * Stack_element.t
-    [@@deriving eq, ord, show, to_yojson]
+  [@@deriving eq, ord, show, to_yojson]
   ;;
 
   type node_and_targeted_dynamic_pop_action =
     Node.t * Targeted_dynamic_pop_action.t
-    [@@deriving eq, ord, show, to_yojson]
+  [@@deriving eq, ord, show, to_yojson]
   ;;
 
   (********** Substructure definitions. **********)
@@ -194,7 +196,7 @@ struct
     ; push_edges_by_source_and_element : Node_and_stack_element_to_node_multimap.t
     ; pop_edges_by_source_and_element : Node_and_stack_element_to_node_multimap.t
     }
-    [@@deriving show]
+  [@@deriving show]
   ;;
 
   let compare x y =

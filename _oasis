@@ -42,6 +42,7 @@ Library "pds-reachability"
   BuildDepends:
     batteries,
     jhupllib,
+    ocaml-monadic,
     ppx_deriving.std (>= 3.2),
     ppx_deriving_yojson (>= 2.1),
     yojson
