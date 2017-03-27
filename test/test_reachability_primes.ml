@@ -66,11 +66,16 @@ struct
     let show = show_targeted_dynamic_pop_action;;
     let to_yojson = targeted_dynamic_pop_action_to_yojson;;
   end;;
-  (*TODO: do I need untargeted dynamic pops too? I don't think I do for the primes test, but maybe I should add them*)
-  type stack_action =
-    ( Stack_element.t
-    , Targeted_dynamic_pop_action.t
-    ) pds_stack_action
+  module Untargeted_dynamic_pop_action =
+  struct
+    type t = Foo of t
+      [@@deriving eq, ord, show, to_yojson]
+  end;;
+  module Stack_action =
+    Stack_action_constructor(Stack_element)(Targeted_dynamic_pop_action)
+  ;;
+  module Terminus =
+    Terminus_constructor(State)(Untargeted_dynamic_pop_action)
   ;;
   let perform_targeted_dynamic_pop element action =
     match action with
@@ -80,11 +85,6 @@ struct
       else
         Enum.singleton []
   ;;
-  module Untargeted_dynamic_pop_action =
-  struct
-    type t = Foo of t
-      [@@deriving eq, ord, show, to_yojson]
-  end;;
   let perform_untargeted_dynamic_pop element action =
     Enum.empty ()
   ;;
@@ -97,7 +97,8 @@ module Test_reachability =
     (Test_dph)
     (Pds_reachability_work_collection_templates.Work_stack)
 ;;
-
+open Test_reachability.Stack_action.T;;
+open Test_reachability.Terminus.T;;
 let prime_factor_count_test =
   "prime_factor_count_test" >:: fun _ ->
     let is_prime n =
@@ -123,7 +124,7 @@ let prime_factor_count_test =
             let less_than_state = List.of_enum (1--n) in
             let primes_less_than_state = List.filter is_prime less_than_state in
             let prime_factors = List.filter (is_factor n) primes_less_than_state in
-            let transition_list = List.map (fun k -> ([Push (Prime k)], Number(n/k))) prime_factors in
+            let transition_list = List.map (fun k -> ([Push (Prime k)], Static_terminus(Number(n/k)))) prime_factors in
             List.enum transition_list
            | Count _ ->
             Enum.empty ()
@@ -135,7 +136,7 @@ let prime_factor_count_test =
         (fun state ->
            match state with
            | Count c ->
-             Enum.singleton ([Pop_dynamic_targeted(Test_dph.Pop_anything_but(Bottom '$'))], (Count (c+1)))
+             Enum.singleton ([Pop_dynamic_targeted(Test_dph.Pop_anything_but(Bottom '$'))], Static_terminus(Count (c+1)))
            | Number _ ->
              Enum.empty ()
         )
@@ -144,7 +145,7 @@ let prime_factor_count_test =
         (fun state ->
            match state with
            | Count c ->
-             Enum.singleton ([Pop (Bottom '$')], state)
+             Enum.singleton ([Pop (Bottom '$')], Static_terminus(state))
            | Number _ ->
              Enum.empty ())
       |> Test_reachability.add_start_state start [Push (Bottom '$')]
