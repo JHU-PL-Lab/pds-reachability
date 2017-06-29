@@ -5,7 +5,7 @@
 open Batteries;;
 open Jhupllib;;
 
-open Nondeterminism;;
+open Eager_nondeterminism;;
 open Pds_reachability_types_stack;;
 open Pp_utils;;
 open Yojson_utils;;
