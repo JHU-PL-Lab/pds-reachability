@@ -420,6 +420,7 @@ let prime_factor_count_test =
     let analysis =
       Test_reachability.empty ()
       |> Test_reachability.add_edge_function
+        (*transitions from each state to its prime factors*)
         (fun state ->
            if (state > 0) then
              let less_than_state = List.of_enum (1--state) in
