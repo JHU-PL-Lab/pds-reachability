@@ -18,7 +18,7 @@ distribution.
   5. Run `opam-publish prepare pds-reachability URL` where `URL` is the location
      of the GitHub tarball reflecting the commit you are trying to release.
 
-  6. Run `opam-push submit DIR` where `DIR` is the directory created by
+  6. Run `opam-publish submit DIR` where `DIR` is the directory created by
      `opam-publish prepare`.
 
   7. Follow the Travis CI builds on GitHub for the resulting pull request into
