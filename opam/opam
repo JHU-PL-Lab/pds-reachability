@@ -1,6 +1,6 @@
 opam-version: "1.2"
 name: "pds-reachability"
-version: "0.2+dev"
+version: "0.2.1"
 maintainer: "JHU PL Lab <pl.cs@jhu.edu>"
 authors: [ "JHU PL Lab <pl.cs@jhu.edu>" ]
 license: "Apache"
@@ -28,10 +28,11 @@ depends: [
   "batteries"
   "jhupllib"
   "oasis" {build & >= "0.4.7"}
+  "ocaml-monadic"
   "ocamlbuild" {build}
   "ocamlfind" {build}
   "ounit" {build}
   "ppx_deriving" {>= "3.2"}
-  "ppx_deriving_yojson" {>= "2.0"}
+  "ppx_deriving_yojson" {>= "2.1"}
   "yojson"
 ]
