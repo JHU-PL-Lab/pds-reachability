@@ -16,7 +16,7 @@ This project uses [OASIS](http://oasis.forge.ocamlcore.org/) as a build tool.  A
 
   1. Install dependencies.
 
-    `opam install oasis batteries jhupllib monadlib ocaml-monadic ppx_deriving.std ppx_deriving_yojson yojson`
+    `opam install oasis batteries jhupllib monadlib ocaml-monadic ppx_deriving ppx_deriving_yojson yojson`
 
   2. Create a dynamic OASIS setup file.
 
