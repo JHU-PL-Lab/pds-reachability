@@ -85,7 +85,7 @@ struct
       else
         Enum.singleton []
   ;;
-  let perform_untargeted_dynamic_pop element action =
+  let perform_untargeted_dynamic_pop _ _ =
     Enum.empty ()
   ;;
 end;;
@@ -144,7 +144,7 @@ let prime_factor_count_test =
         (*pop Bottom stack element*)
         (fun state ->
            match state with
-           | Count c ->
+           | Count _ ->
              Enum.singleton ([Pop (Bottom '$')], Static_terminus(state))
            | Number _ ->
              Enum.empty ())

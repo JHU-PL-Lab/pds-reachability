@@ -3,9 +3,7 @@
    and utility functions for them.
 *)
 open Batteries;;
-open Jhupllib;;
 open Pds_reachability_types_stack;;
-open Pp_utils;;
 open Pds_reachability_utils;;
 
 module type Types =
@@ -86,6 +84,8 @@ struct
     | Intermediate_node of intermediate_destination * Stack_action.t list
   [@@deriving eq, ord, show, to_yojson]
   ;;
+  
+  let _ = show_intermediate_destination;;
 
   module Node =
   struct

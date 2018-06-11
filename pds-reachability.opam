@@ -7,22 +7,8 @@ license: "Apache"
 homepage: "https://github.com/JHU-PL-Lab/pds-reachability"
 dev-repo: "https://github.com/JHU-PL-Lab/pds-reachability.git"
 bug-reports: "https://github.com/JHU-PL-Lab/pds-reachability/issues"
-build: [
-  ["oasis" "setup"]
-  ["ocaml" "setup.ml" "-configure" "--prefix" prefix]
-  ["ocaml" "setup.ml" "-build"]
-]
-install: ["ocaml" "setup.ml" "-install"]
-remove: [
-  ["ocaml" "%{etc}%/pds-reachability/setup.ml"
-    "-C" "%{etc}%/pds-reachability" "-uninstall"]
-]
-build-test: [
-  ["oasis" "setup"]
-  ["ocaml" "setup.ml" "-configure" "--enable-tests"]
-  ["ocaml" "setup.ml" "-build"]
-  ["ocaml" "setup.ml" "-test"]
-]
+build: [ "jbuilder" "build" "-p" name "-j" jobs ]
+build-test: [ "jbuilder" "runtest" "-p" name "-j" jobs ]
 depends: [
   "base-threads"
   "batteries"

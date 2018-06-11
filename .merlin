@@ -1,6 +1,0 @@
-PKG jhupllib oasis batteries oUnit ppx_deriving.std ppx_deriving_yojson monadlib  ocaml-monadic
-S src/**
-S test/**
-B _build/src/**
-B _build/test/**
-EXT ounit

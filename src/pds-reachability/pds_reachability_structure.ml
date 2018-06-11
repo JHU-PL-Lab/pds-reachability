@@ -3,7 +3,6 @@
 *)
 open Batteries;;
 open Jhupllib;;
-open Pds_reachability_types_stack;;
 open Pds_reachability_utils;;
 
 (**

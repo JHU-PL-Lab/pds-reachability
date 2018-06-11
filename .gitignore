@@ -18,3 +18,7 @@
 
 # Custom build configuration files
 /.local_*
+
+# jbuilder generates files
+.merlin
+*.install
