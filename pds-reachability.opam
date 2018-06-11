@@ -12,8 +12,8 @@ build-test: [ "jbuilder" "runtest" "-p" name "-j" jobs ]
 depends: [
   "base-threads"
   "batteries"
+  "jbuilder" {build & >= "1.0+beta17"}
   "jhupllib" {>= "0.1.1"}
-  "oasis" {build & >= "0.4.7"}
   "ocaml-monadic"
   "ocamlbuild" {build}
   "ocamlfind" {build}
