@@ -16,7 +16,7 @@ This project uses [Dune](https://github.com/ocaml/dune) as a build tool.  After 
 
   1. Install dependencies.
 
-    `opam install oasis batteries jhupllib monadlib ocaml-monadic ppx_deriving ppx_deriving_yojson yojson`
+    `opam install jbuilder batteries jhupllib monadlib ocaml-monadic ppx_deriving ppx_deriving_yojson yojson`
 
   2. Build the project.
 
