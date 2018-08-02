@@ -1,13 +1,13 @@
 .PHONY: all clean repl test
 
 all:
-	jbuilder build --dev
+	dune build
 
 repl:
-	jbuilder utop src -- -require pds-reachability
+	dune utop src -- -require pds-reachability
 
 test:
-	jbuilder runtest --dev
+	dune runtest --dev
 
 clean:
-	jbuilder clean
+	dune clean
