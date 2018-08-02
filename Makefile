@@ -7,7 +7,7 @@ repl:
 	dune utop src -- -require pds-reachability
 
 test:
-	dune runtest --dev
+	dune runtest
 
 clean:
 	dune clean

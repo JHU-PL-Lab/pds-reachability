@@ -1,7 +1,7 @@
 (alias
   (name runtest)
   (deps test.exe)
-  (action (run ${<}))
+  (action (run ./test.exe))
 )
 
 (executable
