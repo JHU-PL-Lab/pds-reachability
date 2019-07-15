@@ -103,7 +103,7 @@ sig
   (** Extracts a subset of information about an analysis state as JSON data.
       Some parts of the analysis state (such as edge functions) will be
       elided as they cannot be represented. *)
-  val dump_yojson : analysis -> Yojson.Safe.json
+  val dump_yojson : analysis -> Yojson.Safe.t
 
   (** Extracts a subset of information about an analysis state as JSON data.
       This extraction generates a /difference/ between two reachability analyses,
@@ -111,7 +111,7 @@ sig
       assumes the latter is a strict superset of the former; any values appearing
       in the former and not the latter are ignored.  The format of this dump is
       identical to that given by [dump_yojson]. *)
-  val dump_yojson_delta : analysis -> analysis -> Yojson.Safe.json
+  val dump_yojson_delta : analysis -> analysis -> Yojson.Safe.t
 end;;
 
 module Make

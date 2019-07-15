@@ -33,7 +33,7 @@ sig
      Produces a Yojson structure representing the contents of a latter analysis
      which do not appear in the former.
   *)
-  val to_yojson_delta : t -> t -> Yojson.Safe.json
+  val to_yojson_delta : t -> t -> Yojson.Safe.t
 
   (** The empty PDS reachability structure. *)
   val empty : t

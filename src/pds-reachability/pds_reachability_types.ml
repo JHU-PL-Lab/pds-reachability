@@ -2,7 +2,6 @@
    This module defines basic data types for the PDS reachability implementation
    and utility functions for them.
 *)
-open Batteries;;
 open Pds_reachability_types_stack;;
 open Pds_reachability_utils;;
 
@@ -84,7 +83,7 @@ struct
     | Intermediate_node of intermediate_destination * Stack_action.t list
   [@@deriving eq, ord, show, to_yojson]
   ;;
-  
+
   let _ = show_intermediate_destination;;
 
   module Node =

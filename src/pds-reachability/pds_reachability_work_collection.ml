@@ -52,7 +52,7 @@ sig
   val enum : work_collection -> W.t Enum.t
 
 (** Exports a work collection as JSON. *)
-  val to_yojson : work_collection -> Yojson.Safe.json
+  val to_yojson : work_collection -> Yojson.Safe.t
 end;;
 
 (** This module type describes a work collection implementation.  Such an
