@@ -37,8 +37,8 @@ sig
     ?logging_function:(analysis_logging_function option) -> unit -> analysis
 
   (** Adds a single edge to a reachability analysis. *)
-  val add_edge
-    : State.t -> Stack_action.t list -> State.t -> analysis -> analysis
+  val add_edge :
+    State.t -> Stack_action.t list -> State.t -> analysis -> analysis
 
   (** Adds a function to generate edges for a reachability analysis.  Given a
       source node, the function generates edges from that source node.  The
@@ -51,22 +51,22 @@ sig
       created as an edge with a target node; instead, the target is decided in
       some way by the pushed element that the untargeted dynamic pop is
       consuming. *)
-  val add_untargeted_dynamic_pop_action
-    : State.t -> Untargeted_dynamic_pop_action.t -> analysis -> analysis
+  val add_untargeted_dynamic_pop_action :
+    State.t -> Untargeted_dynamic_pop_action.t -> analysis -> analysis
 
   (** Adds a function to generate untargeted dynamic pop ations for a
       reachability analysis.  Given a source node, the function generates
       untargeted actions from that source node.  The function must be pure; for
       a given source, it must generate all actions that it can generate on the
       first call. *)
-  val add_untargeted_dynamic_pop_action_function
-    : untargeted_dynamic_pop_action_function -> analysis -> analysis
+  val add_untargeted_dynamic_pop_action_function :
+    untargeted_dynamic_pop_action_function -> analysis -> analysis
 
   (** Adds a state and initial stack element to the analysis.  This permits the
       state to be used as the source state of a call to [get_reachable_states].
   *)
-  val add_start_state
-    : State.t -> Stack_action.t list -> analysis -> analysis
+  val add_start_state :
+    State.t -> Stack_action.t list -> analysis -> analysis
 
   (** Determines whether the reachability analysis is closed. *)
   val is_closed : analysis -> bool
@@ -82,8 +82,8 @@ sig
       stack element.  This state must have been added to the analysis
       previously.  If the analysis is not fully closed, then the enumeration of
       reachable states may be incomplete.  *)
-  val get_reachable_states
-    : State.t -> Stack_action.t list -> analysis -> State.t Enum.t
+  val get_reachable_states :
+    State.t -> Stack_action.t list -> analysis -> State.t Enum.t
 
   (** Pretty-printing function for the analysis. *)
   val pp_analysis : analysis pretty_printer
