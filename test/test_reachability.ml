@@ -457,7 +457,48 @@ let prime_factor_count_test =
       (fun () -> "analysis:\n" ^
                  String_utils.indent 2 (Test_reachability.show_analysis analysis));
     let states = Test_reachability.get_reachable_states start [Push 'b'] analysis in
-    assert_equal ~printer:(Pp_utils.pp_to_string @@ Pp_utils.pp_list Format.pp_print_int) [-3] (List.sort compare @@ List.of_enum states)
+    assert_equal
+      ~printer:(Pp_utils.pp_to_string @@ Pp_utils.pp_list Format.pp_print_int)
+      [-3]
+      (List.sort compare @@ List.of_enum states)
+;;
+
+let incremental_result_test =
+  "incremental_result_test" >:: fun _ ->
+    let analysis =
+      Test_reachability.empty ()
+      |> Test_reachability.add_edge 0 [Push 'a'] 1
+      |> Test_reachability.add_edge 1 [Push 'b'] 2
+      |> Test_reachability.add_edge 2 [Push 'b'] 3
+      |> Test_reachability.add_edge 0 [Push 'c'] 11
+      |> Test_reachability.add_edge 3 [Pop 'b'] 3
+      |> Test_reachability.add_edge 3 [Pop 'a'] 4
+      |> Test_reachability.add_edge 11 [Pop 'c'] 12
+      |> Test_reachability.add_start_state 0 [Nop]
+    in
+    let rec closure_loop a events =
+      if Test_reachability.is_closed a then events else
+        let (a',lazy note) = Test_reachability.closure_step_reachable a in
+        closure_loop a' (note :: events)
+    in
+    let event_opts = List.rev @@ closure_loop analysis [] in
+    let meaningful_events =
+      event_opts |> List.filter_map
+        (fun event_opt ->
+           match event_opt with
+           | Some(start_state, actions, end_state) ->
+             if start_state = 0 && actions = [Nop] then
+               Some end_state
+             else
+               None
+           | _ -> None
+        )
+    in
+    (* Ensure that they showed up in the right order. *)
+    assert_equal
+      ~printer:(Pp_utils.pp_to_string @@ Pp_utils.pp_list Format.pp_print_int)
+      [0; 12; 4]
+      meaningful_events
 ;;
 
 let tests = "Test_reachability" >:::
@@ -473,5 +514,6 @@ let tests = "Test_reachability" >:::
             ; untargeted_dynamic_pop_function_reachability_test
             ; lazy_edge_function_test
             ; prime_factor_count_test
+            ; incremental_result_test
             ]
 ;;
