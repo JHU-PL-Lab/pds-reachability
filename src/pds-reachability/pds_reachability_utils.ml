@@ -18,3 +18,12 @@ sig
   val show : t -> string
   val to_yojson : t -> Yojson.Safe.t
 end;;
+
+module Unit : Decorated_type with type t = unit =
+struct
+  type t = unit [@@deriving to_yojson];;
+  let equal _ _ = true;;
+  let compare _ _ = 0;;
+  let pp formatter () = Format.pp_print_string formatter "()";;
+  let show () = "()";;
+end;;

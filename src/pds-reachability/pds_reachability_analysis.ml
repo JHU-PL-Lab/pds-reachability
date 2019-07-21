@@ -43,8 +43,16 @@ sig
   (** Adds a function to generate edges for a reachability analysis.  Given a
       source node, the function generates edges from that source node.  The
       function must be pure; for a given source node, it must generate all edges
-      that it can generate on the first call. *)
+      that it can generate on the first call.  This routine will be called on
+      all nodes that are introduced to the PDS. *)
   val add_edge_function : edge_function -> analysis -> analysis
+
+  (** Adds a function to generate edges for a reachability analysis on states
+      with the specified class.  This routine operates as [add_edge_function]
+      except that the provided function will *not* be called on nodes which have
+      a different class. *)
+  val add_classified_edge_function :
+    Class.t -> edge_function -> analysis -> analysis
 
   (** Adds an untargeted pop action to a reachability analysis.  Untargeted pop
       action are similar to targeted pop actions except that they are not
@@ -62,8 +70,15 @@ sig
   val add_untargeted_dynamic_pop_action_function :
     untargeted_dynamic_pop_action_function -> analysis -> analysis
 
+  (** Adds a function to generate untargeted dynamic pop ations for a
+      reachability analysis for nodes of a particular class.  This routine works
+      as [add_untargeted_dynamic_pop_action_function] but only invokes the
+      provided function on nodes of a particular class. *)
+  val add_classified_untargeted_dynamic_pop_action_function :
+    Class.t -> untargeted_dynamic_pop_action_function -> analysis -> analysis
+
   (** Adds a state and initial stack element to the analysis.  This permits the
-      state to be used as the source state of a call to [get_reachable_states].
+        state to be used as the source state of a call to [get_reachable_states].
   *)
   val add_start_state :
     State.t -> Stack_action.t list -> analysis -> analysis
@@ -122,8 +137,10 @@ sig
   val dump_yojson_delta : analysis -> analysis -> Yojson.Safe.t
 end;;
 
-module Make
+module Make_with_classifier
     (Basis : Pds_reachability_basis.Basis)
+    (Classifier : Pds_reachability_basis.State_classifier
+     with module State = Basis.State)
     (Dph : Pds_reachability_types_stack.Dynamic_pop_handler
      with module Stack_element = Basis.Stack_element
       and module State = Basis.State)
@@ -132,6 +149,7 @@ module Make
   : Analysis
     with module State = Basis.State
      and module Stack_element = Basis.Stack_element
+     and module Class = Classifier.Class
      and module Targeted_dynamic_pop_action = Dph.Targeted_dynamic_pop_action
      and module Untargeted_dynamic_pop_action = Dph.Untargeted_dynamic_pop_action
      and module Stack_action = Dph.Stack_action
@@ -140,7 +158,7 @@ module Make
 struct
   (********** Create and wire in appropriate components. **********)
 
-  module Types = Pds_reachability_types.Make(Basis)(Dph);;
+  module Types = Pds_reachability_types.Make(Basis)(Classifier.Class)(Dph);;
   module Work = Pds_reachability_work.Make(Basis)(Types);;
   module Work_collection_impl = Work_collection_template_impl(Work);;
   module Structure = Pds_reachability_structure.Make(Basis)(Dph)(Types);;
@@ -178,6 +196,20 @@ struct
     include Map_to_yojson(Impl)(Node);;
   end;;
 
+  module Class_map = struct
+    module Impl = Map.Make(Class);;
+    include Impl;;
+    include Map_pp(Impl)(Class);;
+    include Map_to_yojson(Impl)(Class);;
+  end;;
+
+  module Class_to_state_multimap = struct
+    module Impl = Multimap.Make(Class)(State);;
+    include Impl;;
+    include Multimap_pp.Make(Impl)(Class)(State);;
+    include Multimap_to_yojson.Make(Impl)(Class)(State);;
+  end;;
+
   (********** Define analysis structure. **********)
 
   type node_awareness =
@@ -191,6 +223,10 @@ struct
   [@@deriving eq, show, to_yojson]
   let _ = show_node_awareness;; (* To ignore an unused generated function. *)
 
+  let pp_list_length formatter lst =
+    Format.fprintf formatter "(length = %d)" @@ List.length lst
+  ;;
+
   type analysis =
     { node_awareness_map : node_awareness Node_map.t
     (* A mapping from each node to whether the analysis is aware of it.  Any node
@@ -199,6 +235,10 @@ struct
     ; known_states : State_set.t
     (* A collection of all states appearing somewhere within the reachability
        structure (whether they have been expanded or not). *)
+    ; known_states_by_class : Class_to_state_multimap.t
+    (* A mapping from state classes to all states of that class appearing
+       somewhere within the reachability structure (whether they have been
+       expanded or not). *)
     ; start_nodes : Node_set.t
     (* A collection of the nodes which are recognized starting points.  Nop
        closure is only valid when sourced from these nodes, so these are the
@@ -206,16 +246,22 @@ struct
     ; reachability : Structure.t
     (* The underlying structure maintaining the nodes and edges in the graph. *)
     ; edge_functions : edge_function list
-          [@printer fun formatter functions ->
-            Format.fprintf formatter "(length = %d)"
-              (List.length functions)]
-          (* The list of all edge functions for this analysis. *)
+          [@printer pp_list_length]
+          (* The list of all general edge functions for this analysis. *)
+    ; classified_edge_functions : edge_function list Class_map.t
+          [@printer
+            Jhupllib.Pp_utils.pp_map Class.pp pp_list_length Class_map.enum]
+          (* A mapping from classes to the edge functions of that class. *)
     ; untargeted_dynamic_pop_action_functions :
         untargeted_dynamic_pop_action_function list
-          [@printer fun formatter functions ->
-            Format.fprintf formatter "(length = %d)"
-              (List.length functions)]
+          [@printer pp_list_length]
           (* The list of all untargeted dynamic pop action functions. *)
+    ; classified_untargeted_dynamic_pop_action_functions :
+        untargeted_dynamic_pop_action_function list Class_map.t
+          [@printer
+            Jhupllib.Pp_utils.pp_map Class.pp pp_list_length Class_map.enum]
+          (* A mapping from classes to untargeted dynamic pop action
+             functions of that class. *)
     ; work_collection : Work_collection_impl.work_collection
     (* The collection of work which has not yet been performed. *)
     ; work_count : int
@@ -310,10 +356,13 @@ struct
   let empty ?logging_function:(log_fn=None) () =
     { node_awareness_map = Node_map.empty
     ; known_states = State_set.empty
+    ; known_states_by_class = Class_to_state_multimap.empty
     ; start_nodes = Node_set.empty
     ; reachability = Structure.empty
     ; edge_functions = []
+    ; classified_edge_functions = Class_map.empty
     ; untargeted_dynamic_pop_action_functions = []
+    ; classified_untargeted_dynamic_pop_action_functions = Class_map.empty
     ; work_collection = Work_collection_impl.empty
     ; work_count = 0
     ; logging_function = log_fn
@@ -354,6 +403,37 @@ struct
     }
   ;;
 
+  let add_classified_edge_function
+      (class_ : Class.t) (edge_function : edge_function) (analysis : analysis)
+    : analysis =
+    (* First, we have to catch up on this edge function by calling it with every
+       state of this class present in the analysis. *)
+    let work : Work.t Enum.t =
+      let open Nondeterminism_monad in Nondeterminism_monad.enum @@
+      let%bind from_state =
+        pick_enum @@
+        Class_to_state_multimap.find class_ analysis.known_states_by_class
+      in
+      let%bind (actions,terminus) = pick_enum @@ edge_function from_state in
+      (* We know that the from_node has already been introduced, so we just have
+         to add the edge.*)
+      return @@ create_work_for_path
+        (State_node from_state) actions (terminus_to_destination terminus)
+    in
+    (* Now we add both the catch-up work (so the analysis is as if the edge
+       function was present all along) and the edge function (so it'll stay
+       in sync in the future). *)
+    { (add_works work analysis) with
+      classified_edge_functions =
+        Class_map.add
+          class_
+          (edge_function ::
+           (Class_map.find_default [] class_ analysis.classified_edge_functions)
+          )
+          analysis.classified_edge_functions
+    }
+  ;;
+
   let add_untargeted_dynamic_pop_action from_state pop_action analysis =
     let from_node = State_node from_state in
     analysis
@@ -378,6 +458,36 @@ struct
     { (add_works work analysis) with
       untargeted_dynamic_pop_action_functions =
         pop_action_fn :: analysis.untargeted_dynamic_pop_action_functions
+    }
+  ;;
+
+  let add_classified_untargeted_dynamic_pop_action_function
+      (class_ : Class.t)
+      (pop_action_fn : untargeted_dynamic_pop_action_function)
+      (analysis : analysis)
+    : analysis =
+    let work : Work.t Enum.t =
+      let open Nondeterminism_monad in Nondeterminism_monad.enum @@
+      let%bind from_state =
+        pick_enum @@
+        Class_to_state_multimap.find class_ analysis.known_states_by_class
+      in
+      let%bind action = pick_enum @@ pop_action_fn from_state in
+      let from_node = State_node from_state in
+      return @@ Work.Introduce_untargeted_dynamic_pop(from_node, action)
+    in
+    (* Now we add both the catch-up work (so the analysis is as if the function
+       was present all along) and the function (so it'll stay in sync in the
+       future). *)
+    { (add_works work analysis) with
+      classified_untargeted_dynamic_pop_action_functions =
+        Class_map.add
+          class_
+          (pop_action_fn ::
+           (Class_map.find_default [] class_
+              analysis.classified_untargeted_dynamic_pop_action_functions)
+          )
+          analysis.classified_untargeted_dynamic_pop_action_functions
     }
   ;;
 
@@ -440,7 +550,9 @@ struct
              Printf.sprintf "PDS reachability closure step: %s"
                (Work.show work)
           );
-        let analysis = { analysis with work_collection = new_work_collection } in
+        let analysis =
+          { analysis with work_collection = new_work_collection }
+        in
         (* A utility function to add a node to a set *only if* it needs to be
            expanded. *)
         (* TODO: consider - do we want to do this filtering in add_work or
@@ -458,11 +570,21 @@ struct
             (* We're adding to the analysis a node that it does not contain. *)
             match node with
             | State_node(state) ->
-              (* We just need to introduce this node to all of the edge
-                 functions that we have accumulated so far. *)
+              (* We need to introduce this node to all of the functions we have
+                 accumulated so far.  This includes unclassified and classified
+                 functions; it also includes edge functions and untargeted
+                 dynamic pop functions. *)
+              let class_ = Classifier.classify state in
+              let relevant_edge_functions =
+                Enum.append
+                  (analysis.edge_functions
+                   |> List.enum)
+                  (analysis.classified_edge_functions
+                   |> Class_map.find_default [] class_
+                   |> List.enum)
+              in
               let edge_work =
-                analysis.edge_functions
-                |> List.enum
+                relevant_edge_functions
                 |> Enum.map (fun f -> f state)
                 |> Enum.concat
                 |> Enum.map (fun (actions,terminus) ->
@@ -474,9 +596,16 @@ struct
                       (terminus_to_destination terminus)
                   )
               in
+              let relevant_popdynu_functions =
+                Enum.append
+                  (analysis.untargeted_dynamic_pop_action_functions
+                   |> List.enum)
+                  (analysis.classified_untargeted_dynamic_pop_action_functions
+                   |> Class_map.find_default [] class_
+                   |> List.enum)
+              in
               let popdynu_work =
-                analysis.untargeted_dynamic_pop_action_functions
-                |> List.enum
+                relevant_popdynu_functions
                 |> Enum.map (fun f -> f state)
                 |> Enum.concat
                 |> Enum.map
@@ -484,8 +613,17 @@ struct
                      Work.Introduce_untargeted_dynamic_pop(node, action)
                   )
               in
-              { (analysis |> add_works edge_work |> add_works popdynu_work) with
-                known_states = analysis.known_states |> State_set.add state
+              { (analysis
+                 |> add_works edge_work
+                 |> add_works popdynu_work
+                ) with
+                known_states =
+                  analysis.known_states
+                  |> State_set.add state
+              ; known_states_by_class =
+                  analysis.known_states_by_class
+                  |> Class_to_state_multimap.add
+                    (Classifier.classify state) state
               ; node_awareness_map =
                   analysis.node_awareness_map
                   |> Node_map.add node Expanded
@@ -497,10 +635,10 @@ struct
               let edge_work =
                 create_work_for_path node actions destination
               in
-              (* We now add a work item to introduce this edge.  That introduction
-                 will trigger the expansion of any target node if necessary.  We
-                 also have to mark the source node as expanded in the awareness
-                 map. *)
+              (* We now add a work item to introduce this edge.  That
+                 introduction will trigger the expansion of any target node if
+                 necessary.  We also have to mark the source node as expanded in
+                 the awareness map. *)
               { (analysis
                  |> add_work edge_work
                 ) with
@@ -908,4 +1046,29 @@ struct
          ]
       )
   ;;
+end;;
+
+module Make
+    (Basis : Pds_reachability_basis.Basis)
+    (Dph : Pds_reachability_types_stack.Dynamic_pop_handler
+     with module Stack_element = Basis.Stack_element
+      and module State = Basis.State)
+    (Work_collection_template_impl :
+       Pds_reachability_work_collection.Work_collection_template)
+  : Analysis
+    with module State = Basis.State
+     and module Stack_element = Basis.Stack_element
+     and module Targeted_dynamic_pop_action = Dph.Targeted_dynamic_pop_action
+     and module Untargeted_dynamic_pop_action = Dph.Untargeted_dynamic_pop_action
+     and module Stack_action = Dph.Stack_action
+     and module Terminus = Dph.Terminus
+=
+struct
+  module Unit_classifier = struct
+    module State = Basis.State;;
+    module Class = Pds_reachability_utils.Unit;;
+    let classify _ = ();;
+  end;;
+  include Make_with_classifier
+      (Basis)(Unit_classifier)(Dph)(Work_collection_template_impl);;
 end;;

@@ -31,10 +31,24 @@ struct
   let to_yojson c = `String (String.make 1 c)
 end;;
 
+module Test_class =
+struct
+  type t = int
+  let equal = (==)
+  let compare = compare
+  let pp = Format.pp_print_int
+  let show = string_of_int
+  let to_yojson n = `Int n
+end;;
+
 module Test_spec =
 struct
   module State = Test_state
   module Stack_element = Test_stack_element
+  module Class = Test_class
+  let classify (state : State.t) : Class.t =
+    state mod 100
+  ;;
 end;;
 
 module Test_dph =
@@ -114,6 +128,14 @@ end;;
 
 module Test_reachability =
   Pds_reachability.Make
+    (Test_spec)
+    (Test_dph)
+    (Pds_reachability_work_collection_templates.Work_stack)
+;;
+
+module Test_classified_reachability =
+  Pds_reachability.Make_with_classifier
+    (Test_spec)
     (Test_spec)
     (Test_dph)
     (Pds_reachability_work_collection_templates.Work_stack)
@@ -542,6 +564,37 @@ let incremental_unique_test =
       meaningful_events
 ;;
 
+let classifier_test =
+  "classifier_test" >:: fun _ ->
+    let push_a_inc state =
+      Enum.singleton ([Push 'a'], Static_terminus(state+1))
+    in
+    let analysis =
+      Test_classified_reachability.empty ()
+      (* 5 pushes 'a' to 5, 105 pushes 'a' to 106, etc. *)
+      |> Test_classified_reachability.add_classified_edge_function 5 push_a_inc
+      (* Build a path from 5 to 206 using that function and more edges *)
+      |> Test_classified_reachability.add_edge 6 [Pop 'a'] 105
+      |> Test_classified_reachability.add_edge 106 [Nop] 205
+      |> Test_classified_reachability.add_edge 206 [Pop 'a'] 206
+      (* Build a false path to 306 (as the edge function will get us there) *)
+      |> Test_classified_reachability.add_edge 206 [Push 'a'] 305
+      (* Build a path to 7 if the classifier is working incorrectly. *)
+      |> Test_classified_reachability.add_edge 7 [Pop 'a'] 7
+      (* Perform closure *)
+      |> Test_classified_reachability.add_start_state 5 [Push 'a']
+      |> Test_classified_reachability.fully_close
+    in
+    let states =
+      Test_classified_reachability.get_reachable_states 5 [Push 'a'] analysis
+      |> List.of_enum
+    in
+    assert_equal
+      ~printer:(Pp_utils.pp_to_string @@ Pp_utils.pp_list Format.pp_print_int)
+      [206]
+      states
+;;
+
 let tests = "Test_reachability" >:::
             [ immediate_reachability_test
             ; immediate_non_reachable_test
@@ -557,5 +610,6 @@ let tests = "Test_reachability" >:::
             ; prime_factor_count_test
             ; incremental_result_test
             ; incremental_unique_test
+            ; classifier_test
             ]
 ;;

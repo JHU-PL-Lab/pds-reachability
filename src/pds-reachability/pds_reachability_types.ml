@@ -13,6 +13,9 @@ sig
   (** The decorated type of stack elements in the PDS. *)
   module Stack_element : Decorated_type
 
+  (** The type of classes of states in the PDS. *)
+  module Class : Decorated_type
+
   (** The decorated type of targeted dynamic pop actions in the PDS. *)
   module Targeted_dynamic_pop_action : Decorated_type
 
@@ -52,12 +55,14 @@ end;;
 
 module Make
     (Basis : Pds_reachability_basis.Basis)
+    (Class : Decorated_type)
     (Dph : Pds_reachability_types_stack.Dynamic_pop_handler
      with module Stack_element = Basis.Stack_element
       and module State = Basis.State
     )
   : Types with module Stack_element = Basis.Stack_element
            and module State = Basis.State
+           and module Class = Class
            and module Targeted_dynamic_pop_action =
                  Dph.Targeted_dynamic_pop_action
            and module Untargeted_dynamic_pop_action =
@@ -68,6 +73,7 @@ module Make
 struct
   module State = Basis.State;;
   module Stack_element = Basis.Stack_element;;
+  module Class = Class;;
   module Targeted_dynamic_pop_action = Dph.Targeted_dynamic_pop_action;;
   module Untargeted_dynamic_pop_action = Dph.Untargeted_dynamic_pop_action;;
   module Stack_action = Dph.Stack_action;;
