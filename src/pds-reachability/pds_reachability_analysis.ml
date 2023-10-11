@@ -874,7 +874,7 @@ struct
   ;;
 
   let closure_step analysis =
-    fst @@ (closure_step_reachable[@inlined]) analysis
+    fst @@ closure_step_reachable analysis
   ;;
 
   let rec fully_close analysis =
