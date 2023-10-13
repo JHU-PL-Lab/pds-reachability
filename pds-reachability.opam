@@ -1,6 +1,6 @@
 opam-version: "2.0"
 name: "pds-reachability"
-version: "0.2.2+dev"
+version: "0.2.3"
 maintainer: "JHU PL Lab <pl.cs@jhu.edu>"
 authors: [ "JHU PL Lab <pl.cs@jhu.edu>" ]
 synopsis: "A PDS reachability query library"
@@ -12,11 +12,11 @@ bug-reports: "https://github.com/JHU-PL-Lab/pds-reachability/issues"
 build: [ "dune" "build" "-p" name "-j" jobs ]
 run-test: [ "dune" "runtest" "-p" name "-j" jobs ]
 depends: [
-  "ocaml" {>= "4.04.0"}
+  "ocaml" {>= "4.08.0"}
   "base-threads"
-  "batteries"
+  "batteries" {>= "3.0"}
   "dune" {build & >= "1.0"}
-  "jhupllib" {>= "0.2.1"}
+  "jhupllib" {>= "0.3"}
   "ocaml-monadic" {>= "0.4.1"}
   "ocamlbuild" {build}
   "ocamlfind" {build}
