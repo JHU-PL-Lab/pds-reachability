@@ -5,7 +5,7 @@ maintainer: "JHU PL Lab <pl.cs@jhu.edu>"
 authors: [ "JHU PL Lab <pl.cs@jhu.edu>" ]
 synopsis: "A PDS reachability query library"
 description: "This library performs efficient reachability queries on abstractly specified push-down systems."
-license: "Apache"
+license: "Apache-2.0"
 homepage: "https://github.com/JHU-PL-Lab/pds-reachability"
 dev-repo: "git+https://github.com/JHU-PL-Lab/pds-reachability.git"
 bug-reports: "https://github.com/JHU-PL-Lab/pds-reachability/issues"
