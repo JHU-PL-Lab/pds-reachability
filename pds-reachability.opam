@@ -18,9 +18,7 @@ depends: [
   "dune" {>= "1.4"}
   "jhupllib" {>= "0.3"}
   "ocaml-monadic" {>= "0.4.1"}
-  "ocamlbuild" {build}
-  "ocamlfind" {build}
-  "ounit" {build}
+  "ounit" {with-test}
   "ppx_deriving" {>= "3.2"}
   "ppx_deriving_yojson" {>= "2.1"}
   "yojson" {>= "1.7.0"}
